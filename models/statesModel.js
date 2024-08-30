@@ -38,10 +38,6 @@ const stateSchema = mongoose.Schema({
         type: Number,
         default: null
     },
-    referenceId: {
-        type: String,
-        default: null
-    },
     isAUT: {
         type: Boolean,
         default: false
@@ -59,10 +55,6 @@ const stateSchema = mongoose.Schema({
         default: false
     },
     cpass: {
-        type: Boolean,
-        default: false
-    },
-    ncpass: {
         type: Boolean,
         default: false
     },
@@ -91,8 +83,8 @@ const stateSchema = mongoose.Schema({
         default: false
     },
     ref: {
-        type: Boolean,
-        default: false
+        type: Object,
+        default: {}
     },
     p1c: {
         type: Boolean,

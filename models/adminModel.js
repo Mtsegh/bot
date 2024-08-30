@@ -9,6 +9,10 @@ const contactSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    msgId: {
+        type: Object,
+        required: true
+    },
     timestamp: {
         type: Date,
         required: true,

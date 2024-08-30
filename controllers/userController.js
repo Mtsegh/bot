@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const { generateAut, key } = require("../messageFunctions/botfunction");
-const { generateReferenceId } = require("../middleware/userMiddleware");
+const { generateReferenceId, generateRandomString } = require("../middleware/userMiddleware");
 const { buydata, buyairtime } = require("../api/api");
 
 // Register User
@@ -21,7 +21,7 @@ const registerUser = asyncHandler(async (name, passcode, TId) => {
         const aut = generateAut();
 
         const user = await User.create({
-            Name: name,
+            name: name,
             telegramId: TId,
             passcode: passcode,
             AUT: aut
@@ -147,14 +147,14 @@ const makePurchase = asyncHandler(async (TId, typeofservice, info) => {
             return { message: "Insufficient balance😔" };
         }
 
-        let transactionMade;
+        let tranx_res;
         try {
             if (typeofservice === "data") {
                 const { network_id, plan_id, phone } = info;
-                transactionMade = await buydata(network_id, plan_id, phone);
+                tranx_res = await buydata(network_id, plan_id, phone);
             } else if (typeofservice === "airtime") {
                 const { network_id, amount, phone } = info;
-                transactionMade = await buyairtime(network_id, amount, phone);
+                tranx_res = await buyairtime(network_id, amount, phone);
             } else {
                 return { message: "Oh no. An error occurred. Please try again or contact admin" };
             }
@@ -162,41 +162,27 @@ const makePurchase = asyncHandler(async (TId, typeofservice, info) => {
             return { error: "Transaction failed, please try again" };
         }
         
-        if (!transactionMade) {
+        if (!tranx_res) {
             return { message: "Unable to process transaction, please try again later" };
         }
         
-        const { status, message } = transactionMade;
-        user.balance = status === 'completed' ? balance - Number(info.amount) : balance;
+        user.balance = tranx_res.Status === "successful" ? balance - Number(info.amount) : balance;
 
-        let verifiedRefId;
-        const com = async() => {
-            const refId = generateReferenceId('NOPACBDEFH');
-            const exists = await User.findOne({ 'transactionHistory.referenceId': refId });
-            if (exists) {
-                return com();
-            }
-            verifiedRefId = refId;
-        }
-        await com();
-        
+        const refId = generateRandomString(2, 'NOPACBDEFH');
+                
         const newHistory = {
-            referenceId: verifiedRefId,
+            referenceId: `${tranx_res.id+refId}`,
             amount: Number(info.amount),
             type: info.purchase,
-
+            API_Id: tranx_res.id,
             description: `${info.validity}`,
             provider: key[Number(info.network_id)],
-            status: status,
+            status: tranx_res.Status,
             createdAt: new Date()
         };
 
         user.transactionHistory.push(newHistory);
         await user.save();
-
-        if (status === 'failed') {
-            return { newHistory, message };
-        }
 
         return { newHistory, success: message };
     } catch (error) {
@@ -264,15 +250,15 @@ const verifyTransaction = asyncHandler(async (TId, referenceId) => {
         const transactionToVerify = await User.findOne({ "transactionHistory.referenceId": referenceId });
         
         if (!transactionToVerify || !user || !referenceId) {
-            return { message: "Error validating transaction" };
+            return { message: "Transaction not found" };
         }
         
         let confirmedStatus;
         try {
             // Verification
-            const verified = await verify(referenceId);
+            const verified = await verify(referenceId.slice(0, 8));
             if (verified) {
-                transactionToVerify.status = verified;
+                transactionToVerify.status = verified.Status;
                 confirmedStatus = await transactionToVerify.save();
             } else {
                 return { message: "Verification failed" };

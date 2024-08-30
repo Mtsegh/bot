@@ -7,7 +7,7 @@ const {handle_message} = require('./messageFunctions/message');
 const handle_callback_data = require('./messageFunctions/callBackData');
 const State = require('./models/statesModel');
 const { getUserStateFromDB } = require('./states');
-const { protect } = require('./middleware/authMiddleware');
+const { protect, deleteOldMessages } = require('./middleware/authMiddleware');
 
 mongoose.connect(process.env.MONGO_URI).then(() => {
     try {

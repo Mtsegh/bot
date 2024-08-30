@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const { encryptPassword } = require("../middleware/userMiddleware");
@@ -6,6 +7,9 @@ const transactionHistorySchema = mongoose.Schema({
     referenceId: {
         type: String,
         required: true,
+    },
+    API_Id: {
+        type: String
     },
     amount: {
         type: Number,

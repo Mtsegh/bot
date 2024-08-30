@@ -1,9 +1,10 @@
+const { option } = require("../messageFunctions/botfunction");
 const { editMessage } = require("../messageFunctions/sender");
 
 const defaultOpt = {
     reply_markup: JSON.stringify({
         inline_keyboard: [
-            [{ text: 'Cancel', callback_data: 'mainMenu' }],
+            [option('Cancel', 'mainMenu')],
         ],
     }),
 }

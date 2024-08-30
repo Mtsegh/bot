@@ -56,7 +56,7 @@ const Admin = async(bot, admin, TId, action) => {
                     ],
                 }),
             });
-
+            break 
         case 'API':
             await sendMessage(bot, admin, `Handle your API:`, {
                 reply_markup: JSON.stringify({

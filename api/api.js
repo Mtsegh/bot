@@ -14,7 +14,7 @@ const buyairtime = async (network_id, amount, phone) => {
         method: 'post',
         url: 'https://thechosendata.com/api/topup/',
         headers: { 
-            'Authorization': `Token ${process.env.TCD_API}`, 
+            'Authorization': `Token f5ebdb19ab594ca3a8c97fa7d2c69e0681ff9a95`, 
             'Content-Type': 'application/json'
         },
         data: data
@@ -42,7 +42,7 @@ const buydata = async (network_id, plan_id, phone) => {
         method: 'post',
         url: 'https://thechosendata.com/api/data/',
         headers: { 
-            'Authorization': `Token ${process.env.TCD_API}`, 
+            'Authorization': `Token f5ebdb19ab594ca3a8c97fa7d2c69e0681ff9a95`, 
             'Content-Type': 'application/json'
         },
         data: data
@@ -62,7 +62,7 @@ const verify = async (transactionId) => {
         method: 'get',
         url: `https://thechosendata.com/api/data/${transactionId}`,
         headers: { 
-            'Authorization': `Token ${process.env.TCD_API}`, 
+            'Authorization': `Token f5ebdb19ab594ca3a8c97fa7d2c69e0681ff9a95`, 
             'Content-Type': 'application/json'
         }
     };
@@ -111,7 +111,7 @@ const api_airtory = async () => {
 }
 
 // Function to get specific data (api_datory)
-const api_datory = async (network_id, amount, phone) => {
+const api_datory = async () => {
     const config = {
         method: 'get',
         url: 'https://thechosendata.com/api/data/58',

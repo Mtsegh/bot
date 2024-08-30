@@ -22,7 +22,6 @@ const generateReferenceId = (param) => {
     return referenceId;
 };
 
-
 // Function to generate a random string refIdf specified length
 function generateRandomString(length, characters) {
     let result = '';
@@ -37,4 +36,5 @@ function generateRandomString(length, characters) {
 module.exports = {
     encryptPassword,
     generateReferenceId,
+    generateRandomString
 }

@@ -1,4 +1,5 @@
 const forms = require("../api/Data_Plans");
+const { generateRandomString } = require("../middleware/userMiddleware");
 
 const menu = (admin) => {
     return { text: 'Admin Menu', callback_data: JSON.stringify({
@@ -113,16 +114,6 @@ const mtn_plans = [
     'MTN_GIFTING',
     'MTN_SME',
 ]
-// Function to generate a random string refIdf specified length
-function generateRandomString(length, characters) {
-  let result = '';
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      
-  }
-  return result;
-}
 
 function getValidity(innerText) {
     const data = extractDataAmount(innerText);

@@ -1,4 +1,6 @@
 const { updateUserState } = require("../states");
+const getReceipt = require("../utils/receiptmaker");
+const { option } = require("./botfunction");
 
 /**
  * Edits a message with the given text and details, and handles errors.
@@ -31,7 +33,7 @@ async function editMessage(bot, text, details) {
  */
 async function sendMessage(bot, chatId, text, option) {
     try {
-        await bot.sendMessage(chatId, 'Choose an option:', option).then(async(msg) => {
+        await bot.sendMessage(chatId, text, option).then(async(msg) => {
             await updateUserState(chatId, { msgId: msg.message_id })
             console.log('Message sent successfully');
             return msg.message_id
@@ -66,10 +68,24 @@ async function deleteMessage(bot, chatId, messageId) {
     }
 }
 
+async function sendPhoto(bot, detail, chatId) {
+    try {
+        await getReceipt(chatId, detail)
+        const photo = `../userReceipt/${chatId}.jpg`;
+        await bot.sendPhoto(chatId, photo, stringify([[option('🔙 Back', 'history')], [option('Main Menu', 'mainMenu')] ]));
+        console.log('Receipt sent successfully');
+    } catch (error) {
+        console.error('Error sending receipt:', {
+            chatId,
+            error: error.message || error
+        });
+    }
+}
 
 
 module.exports = {
     editMessage,
     sendMessage,
-    deleteMessage
+    deleteMessage,
+    sendPhoto
 }
