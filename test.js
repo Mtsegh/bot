@@ -118,21 +118,14 @@ async function captureDivScreenshot(TId, info) {
 class Contactadmin {
   
   static async dateformat(date) {
-    return date.split(' ')[3]+' '+date.split(' ')[2,0];
+    return date.split(' ')+' '+date.split(' ')[2,0];
   };
 }
 async function name() {
+  var f = new Date()
   
-  let date = '500MB at ₦122.5 for 30 days'//forms['9mobile'].Data_Plan[1].InnerText;
-  const a = await Contactadmin.dateformat(date)
+  console.log(f)
+}
 
-  console.log(a)
-}
-let date = '500MB at ₦122.5 for 30 day';
-function getValidity(innerText) {
-  const regex = /(\d+day[s]{0,1}|\d+[' ']+day[s]{0,1})/;
-  const match = innerText.match(regex);
-  return match ? match[0] : null;
-}
-console.log(mount(date))
+//console.log(mount(date))
 name()

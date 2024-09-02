@@ -2,18 +2,20 @@ const User = require("../models/userModel");
 const { updateUserState, getUserStateFromDB } = require("../states");
 const { sendMessage, editMessage } = require("../messageFunctions/sender");
 const Message = require("../models/messageModel");
+const { sendMainMenu } = require("../messageFunctions/message");
+const { stringify } = require("../messageFunctions/botfunction");
 
 const protect = async (bot, msg, TId) => {
     try {
-        const user = await User.findOne({ telegrmId: TId })
+        const user = await User.findOne({ telegramId: TId })
         const state = await getUserStateFromDB(TId);
-        console.log(user, state)
             
         if (!user) {
             return { status: true, message: "User not found" };
         }
         const token = user.token
-
+        console.log('Your token', token)
+        
         if (state.signin) {
             if (msg === 'callback_query') {
                 await editMessage(bot, 'Enter passcode to continue:', {
@@ -30,7 +32,8 @@ const protect = async (bot, msg, TId) => {
                 user.token = user.admin ? Date.now() + 10*60*1000 : Date.now() + 86400000*2;
                 await user.save();
                 await updateUserState(TId, { signin: false });
-                await sendMainMenu(bot, chatId, state.msgId)
+                if (!user.admin) await sendMainMenu(bot, TId, state.msgId);
+                if (user.admin) await sendMessage(bot, TId, "Admin, select option below", stringify([[menu(chatId)]]));
                 return { status: false };
             }
             await editMessage(bot, 'Passcode not correct. Please try again.\nEnter passcode to continue:', {

@@ -1,5 +1,33 @@
 const State = require('./models/statesModel');
 
+const states = {
+    phone: null,
+    isPhone: false,
+    isAirtime: false,
+    textValue: null,
+    plan_id: null,
+    network_id: null,
+    amount: null,
+    isAUT: false,
+    aut: null,
+    auth: false,
+    authaction: null,
+    cpass: false,
+    dataAmount: null,
+    bug: false,
+    bugType: null,
+    retry: false,
+    notuser: false,
+    p1c: false,
+    ref: false,
+    bugAccountId: null,
+    text: false,
+    signin: false,
+    login: false,
+    isAdmin: false,
+    search: false
+}
+
 // Function to update user state
 async function updateUserState(chatId, updates) {
     try {
@@ -29,32 +57,7 @@ async function getUserStateFromDB(chatId) {
     try {
         const state = await State.findOne({ userId: chatId });
         if (!state) {
-            const updatedState = await State.create({
-                userId: chatId,
-                msgId: null,
-                phone: null,
-                isPhone: false,
-                isAirtime: false,
-                textValue: null,
-                plan_id: null,
-                network_id: null,
-                amount: null,
-                isAUT: false,
-                aut: null,
-                auth: false,
-                authaction: null,
-                cpass: false,
-                dataAmount: null,
-                bug: false,
-                bugType: null,
-                retry: false,
-                notuser: false,
-                p1c: false,
-                ref: false,
-                bugAccountId: null,
-                text: false,
-                signin: false
-            });
+            const updatedState = await State.create({userId: chatId, ...states});
     
             if (!updatedState) {
                 console.log('Failed to create state in DB:', chatId);
@@ -76,30 +79,7 @@ async function resetUserState(chatId) {
         const updatedState = await State.findOneAndUpdate(
             { userId: chatId },
             {
-                $set: {
-                    phone: null,
-                    isPhone: false,
-                    isAirtime: false,
-                    textValue: null,
-                    plan_id: null,
-                    network_id: null,
-                    amount: null,
-                    isAUT: false,
-                    aut: null,
-                    auth: false,
-                    authaction: null,
-                    cpass: false,
-                    dataAmount: null,
-                    bug: false,
-                    bugType: null,
-                    retry: false,
-                    notuser: false,
-                    p1c: false,
-                    ref: false,
-                    bugAccountId: null,
-                    text: false,
-                    signin: false,
-                }
+                $set: states
             },
             { 
                 new: true,

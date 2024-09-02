@@ -23,9 +23,10 @@ const buyairtime = async (network_id, amount, phone) => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
-        
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { Error: error.response ? error.response.data : error.message }
     }
 }
 
@@ -51,8 +52,10 @@ const buydata = async (network_id, plan_id, phone) => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { Error: error.response ? error.response.data : error.message }
     }
 }
 
@@ -70,8 +73,10 @@ const verify = async (transactionId) => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { Error: error.response ? error.response.data : error.message }
     }
 }
 
@@ -89,8 +94,10 @@ const api_user = async () => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { Error: error.response ? error.response.data : error.message }
     }
 }
 
@@ -105,8 +112,10 @@ const api_airtory = async () => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { Error: error.response ? error.response.data : error.message }
     }
 }
 
@@ -121,8 +130,10 @@ const api_datory = async () => {
     try {
         const response = await axios(config);
         console.log(JSON.stringify(response.data, null, 2));
+        return 
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
+        return { error: error.response ? error.response.data : error.message }
     }
 }
 

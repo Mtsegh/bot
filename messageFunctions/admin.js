@@ -1,36 +1,33 @@
 const { search } = require("../controllers/adminController");
 const { generateReferenceId } = require("../middleware/userMiddleware");
 const Contact = require("../models/adminModel");
-const { updateUserState, resetUserState } = require("../states");
-const { menu, stringify, dateformat } = require("./botfunction");
-const { sendMessage, editMessage } = require("./sender");
+const { updateUserState, resetUserState, getUserStateFromDB } = require("../states");
+const { menu, stringify, dateformat, callback } = require("./botfunction");
+const { sendMessage, editMessage, deleteMessage } = require("./sender");
 
 const Admin = async(bot, admin, TId, action) => {
-    console.log('admin, TId, action', admin, TId, action)
+    console.log('admin, TId, action', admin, TId, action);
+    const state = await getUserStateFromDB(admin);
+    console.log(state.msgId);
+    
     await updateUserState(admin, { buAccountId: TId })
     switch (action) {
         case 'menu':
             const options = {
                 reply_markup: JSON.stringify({
                     inline_keyboard: [
-                        [{ text: `Transaction as admin`, callback_data: JSON.stringify({
-                            action: "tranx",
-                            user: admin,
-                            type: 'admin'
-                        }) }],
-                        [{ text: 'View users', callback_data: JSON.stringify({
-                            action: "allUsers",
-                            type: 'admin',
-                            user: admin,
-                        }) }],
-                        // [{ text: 'Account Info', callback_data: 'mainMenu'}],
+                        [callback(`Transaction as admin`, admin, "tranx")],
+                        [callback('View users', admin, "allUsers")],
+                        [{ text: 'Account Info', callback_data: 'option2'}],
                     ]
                 })
             }
+            deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, "Admin, select option below", options);
             break;
 
         case 'tranx':
+            deleteMessage(bot, admin, state.msgId)
             await updateUserState(admin, { buAccountId: TId })
             await sendMessage(bot, admin, `Select a purchase option:`, {
                 reply_markup: JSON.stringify({
@@ -58,6 +55,7 @@ const Admin = async(bot, admin, TId, action) => {
             });
             break 
         case 'API':
+            deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, `Handle your API:`, {
                 reply_markup: JSON.stringify({
                     inline_keyboard: [
@@ -74,46 +72,43 @@ const Admin = async(bot, admin, TId, action) => {
         case 'userIssueResolved':
             await Contactadmin.update(TId)
             break;
-        
-        case 'allUsers'||'getUser'||'suspend'||'toVerified'||'makeAdmin'||'api_datory'||'api_airtory'||'api_user':
-            await sendMessage(bot, 'Enter Password to continue...', {
-                chat_id: admin,
-                message_id: msg.message_id,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [menu(admin)],
-                    ],
-                }),
-            });
-            updateUserState(admin, { authaction: action, auth: true, buAccountId: TId })
-            break;
-
-        case 'userDeposit'||'search':
-            const text = action === 'userDeposit' ? "Enter amount to deposit" : 'Enter your search to continue...';
-
-            await sendMessage(bot, text, {
-                chat_id: admin,
-                message_id: msg.message_id,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [menu(admin)],
-                    ],
-                }),
-            });
-            updateUserState(admin, { authaction: action, text: true, buAccountId: TId })
-            break;
 
         default:
-            console.log(action)
-            await sendMessage(bot, "Invalid selection. Please choose a valid option.", {
-                chat_id: chatId,
-                message_id: messageId,
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [menu(admin)],
-                    ],
-                }),
-            });
+            if (action === 'allUsers' || action === 'getUser' || action === 'suspend' || action === 'toVerified' || action === 'makeAdmin' || action === 'api_datory' || action === 'api_airtory' || action === 'api_user') {
+                updateUserState(admin, { authaction: action, auth: true, buAccountId: TId, isAdmin: true });
+                await editMessage(bot, 'Enter Password to continue...', {
+                    chat_id: admin,
+                    message_id: state.msgId,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [menu(admin)],
+                        ],
+                    }),
+                });
+            } else if (action === 'userDeposit' || action === 'search') {
+                const text = action === 'userDeposit' ? "Enter amount to deposit" : 'Enter your search to continue...';
+                updateUserState(admin, { authaction: action, search: true, buAccountId: TId, isAdmin: true });
+                await editMessage(bot, text, {
+                    chat_id: admin,
+                    message_id: state.msgId,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [menu(admin)],
+                        ],
+                    }),
+                });
+            } else {
+                console.log(action);
+                await editMessage(bot, "Invalid selection. Please choose a valid option.", {
+                    chat_id: admin,
+                    message_id: state.msgId,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [menu(admin)],
+                        ],
+                    }),
+                });
+            }
             break;
     }
 }

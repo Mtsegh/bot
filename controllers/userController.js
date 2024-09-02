@@ -162,7 +162,7 @@ const makePurchase = asyncHandler(async (TId, typeofservice, info) => {
             return { error: "Transaction failed, please try again" };
         }
         
-        if (!tranx_res) {
+        if (!tranx_res || tranx_res.error) {
             return { message: "Unable to process transaction, please try again later" };
         }
         

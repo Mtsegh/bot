@@ -42,6 +42,10 @@ const stateSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isAdmin: {
+        type: Boolean,
+        default: false
+    },
     aut: {
         type: String,
         default: null
@@ -95,6 +99,14 @@ const stateSchema = mongoose.Schema({
         default: false
     },
     signin: {
+        type: Boolean,
+        default: false
+    },
+    login: {
+        type: Boolean,
+        default: false
+    },
+    search: {
         type: Boolean,
         default: false
     },

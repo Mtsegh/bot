@@ -14,7 +14,7 @@ const getAllUsers = asyncHandler(async (psd) => {
         for (let i = 0; i < users.length; i++) {    
             userInfo.push({
                 name: users[i].name,
-                totalBalance: users[i].balance 
+                balance: users[i].balance 
             });
         }  
         console.log(userInfo);
