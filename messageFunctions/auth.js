@@ -1,8 +1,8 @@
 const { updateUserState, getUserStateFromDB, resetUserState } = require("../states");
 const User = require("../models/userModel");
-const { makePurchase } = require("../controllers/userController");
+const { makePurchase, makeDeposit } = require("../controllers/userController");
 const { menu, callback, stringify, getValidity, parseInput } = require("./botfunction");
-const { search, getAllUsers, setAdmin } = require("../controllers/adminController");
+const { search, getAllUsers, setAdmin, getUserInfo, changeUserStatus } = require("../controllers/adminController");
 const errorHandler = require("../middleware/errorMiddleware");
 const { sendMessage, editMessage } = require("./sender");
 const { receiptOpt, receiptFormat } = require("./msgoptions");
@@ -95,24 +95,22 @@ const Adminauth = async(bot, admin, TId, action) => {
             break;
 
         case 'getUser':
-            bot.sendMessage(admin, 'Getting User info...').then(async(msg) => {
+            sendMessage(bot, admin, 'Getting User info...').then(async(msg) => {
                 await getUserInfo(admin, TId).then(async(info) => {
                     if (info.message||info.error) {
                         await errorHandler(bot, admin, msg, info.message||info.error, { admin: TId, back: 'allUser' }, true);
-                    } else {                        
+                    } else {
+                        const options = stringify([
+                            [callback('Transaction', TId, "tranx")],
+                            [callback('Update balance', TId, "userDeposit")],
+                            [callback('Make Admin', TId, "makeAdmin")],
+                            [callback('Suspend', TId, "suspend")],
+                            [callback('Message', TId, "chat")],
+                        ]);                   
                         await editMessage(bot, `Heres the info AUT: ${info.AUT}, \nBalance: ${info.balance}, \nDetails: ${info.details}, \nTId: ${info.telegramId}`, {
                             chat_id: admin,
                             message_id: msg,
-                            reply_markup: JSON.stringify({
-                                inline_keyboard: [
-                                    [callback('Transaction', TId, "tranx")],
-                                    [callback('Update User balance', TId, "userDeposit")]
-                                    [callback('Make Admin', TId, "makeAdmin")],
-                                    [callback('Suspend', TId, "suspend")],
-                                    [callback('Message', TId, "chat")],
-                                    [callback('Back', admin, "allUsers")],   
-                                ]
-                            })
+                            reply_markup: options.reply_markup
                         });
                     }
                 })
@@ -196,13 +194,17 @@ const Adminauth = async(bot, admin, TId, action) => {
                 } else {
                     // Handle the case where users are found
                     const inlineKeyboard = result.map(user => ([{
-                        text: `User ${user.telegramId}`,
-                        callback_data: `user_${user.telegramId}`
+                        text: `${user.name} ${user.telegramId}`,
+                        callback_data: JSON.stringify({
+                            type: "admin",
+                            user: user.telegramId,
+                            action: "getUser",
+                        })
                     }]));
         
-                    await bot.editMessageText('Here are all the users that match your criteria:', {
+                    await editMessage(bot, 'Here are all the users that match your criteria:', {
                         chat_id: admin,
-                        message_id: msg.message_id,
+                        message_id: msg,
                         reply_markup: JSON.stringify({
                             inline_keyboard: inlineKeyboard
                         })
@@ -307,7 +309,7 @@ const Adminauth = async(bot, admin, TId, action) => {
                 // TODO 
             } else if (action === 'api_user') {
                 const userdetails = await api_user();
-                
+
             } else {                
                 console.log(action)
                 await errorHandler(bot, admin, state.msgId, "Invalid selection. Please choose a valid option.", null, true)

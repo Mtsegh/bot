@@ -14,7 +14,8 @@ const getAllUsers = asyncHandler(async (psd) => {
         for (let i = 0; i < users.length; i++) {    
             userInfo.push({
                 name: users[i].name,
-                balance: users[i].balance 
+                balance: users[i].balance,
+                telegramId: users[i].telegramId
             });
         }  
         console.log(userInfo);
@@ -56,6 +57,7 @@ const search = asyncHandler(async (search) => {
 
         // Map each user to their info
         const userInfos = users.map(user => ({
+            name: user.name,
             balance: user.balance,
             details: user.details,
             telegramId: user.telegramId,

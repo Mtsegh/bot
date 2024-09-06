@@ -70,19 +70,21 @@ const Admin = async(bot, admin, TId, action) => {
             
             break;
         
-        case 'userIssueResolved':
+        case 'solved':
             await Contactadmin.update(TId)
             break;
 
         default:
             if (action === 'allUsers' || action === 'getUser' || action === 'suspend' || action === 'toVerified' || action === 'makeAdmin' || action === 'api_datory' || action === 'api_airtory' || action === 'api_user') {
-                updateUserState(admin, { authaction: action, auth: true, buAccountId: TId, isAdmin: true });
+                updateUserState(admin, { authaction: action, auth: true, bugAccountId: TId, isAdmin: true });
+                console.log(TId);
+                
                 await editMessage(bot, 'Enter Password to continue...', {
                     chat_id: admin,
                     message_id: state.msgId,
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
-                            [menu(admin)],
+                            [callback('Cancel', admin, "menu")],
                         ],
                     }),
                 });
@@ -94,7 +96,7 @@ const Admin = async(bot, admin, TId, action) => {
                     message_id: state.msgId,
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
-                            [menu(admin)],
+                            [callback('Cancel', admin, "menu")],
                         ],
                     }),
                 });
@@ -122,21 +124,20 @@ class Contactadmin {
             const d = new Date();
             const date = dateformat(d);
             const admins = await search({admin:true});
-            console.log(admins)
+            console.log(admins);
             const msgs = {}
             admins.forEach(async(admin) => {
                 try {
-                    const options = stringify([
-                            [callback('View Account', TId, "getUser")],
-                            [callback('Suspend', TId, "suspend")],
-                            [callback('Resolved', contactId, "userIssueResolved")],
-                            [menu(admin.telegramId)],
-                        ])
-                    sendMessage(bot, admin.telegramId, `${date}\n${contactId}\n\n${bug}`, options).then(async(msg) => {
-                        msgs[admin.telegramId] = msg
+                    sendMessage(bot, admin.telegramId, `${date}\n${contactId}\n\n${bug}`, stringify([
+                        [callback('View Account', TId, "getUser")],
+                        [callback('Resolved', contactId, "done")],
+                        [menu(admin.telegramId)],
+                    ])).then(async(msg) => {
+                        updateUserState(admin.telegramId, {msgId: null})
+                        msgs[admin.telegramId] = msg;
                     });                
                 } catch (error) {
-                    console.error('Error in send to all admins: ', error);
+                    console.error('Error in sending to all admins: ', error);
                 }
             });
             

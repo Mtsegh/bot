@@ -72,6 +72,7 @@ async function deleteMessage(bot, chatId, messageId) {
             messageId,
             error: error.message || error
         });
+        return;
     }
 }
 

@@ -123,7 +123,7 @@ const getTransaction = asyncHandler(async (TId, referenceId) => {
             return { message: "No transaction found" };
         }
         
-        return { transactionInfo };
+        return transactionInfo;
     } catch (error) {
         return { error: `${error.message}\nTry again or contact admin` };
     }

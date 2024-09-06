@@ -2,6 +2,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const forms = require('./api/Data_Plans');
+const { callback, menu } = require('./messageFunctions/botfunction');
 const user = '123456789'
 async function captureDivScreenshot(TId, info) {
     // Define your HTML content with styles
@@ -124,8 +125,14 @@ class Contactadmin {
 async function name() {
   var f = new Date()
   
-  console.log(f)
-}
+  console.log([
+    [JSON.stringify(callback('View Account', 6564888748, "getUser").callback_data).length],
+    [JSON.stringify(callback('Suspend', '6564888748', "suspend").callback_data).length],
+    [JSON.stringify(callback('Resolved', '65648887AS', "Solved").callback_data).length],
+    [JSON.stringify(menu(6564888748).callback_data).length],
+]);
+}console.log(JSON.stringify({ action: "getUser", type: "admin", user: 6564888748 }).length);
+
 
 //console.log(mount(date))
 name()

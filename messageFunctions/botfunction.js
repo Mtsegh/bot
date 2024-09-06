@@ -18,7 +18,7 @@ function stringify(para) {
 
 function callback(name, user, action) {
     return { text: `${name}`, callback_data: JSON.stringify({
-        action: `${action}`,
+        action: action,
         type: 'admin',
         user: user,
     })}

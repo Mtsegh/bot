@@ -207,7 +207,7 @@ const handle_message = async (bot, msge) => {
                         reply_markup: JSON.stringify({
                             inline_keyboard: [
                                 [callback('🔙 Back', state.bugAccountId, 'getUser')],
-                                [menu(admin)],
+                                [menu(chatId)],
                             ],
                         }),
                     });

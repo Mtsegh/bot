@@ -7,7 +7,7 @@ const receiptOpt = stringify([
 ]);
 
 const receiptFormat = (success, buy) => {
-    return `${success}\nTransaction Info\nTransaction Date: ${dateformat(buy.date)}\nReference Id: ${buy.referenceId}\n${buy.type}: ${buy.description}\nNetwork: ${buy.provider}\nAmount: ${buy.amount}\nStatus: ${buy.status}`;
+    return `${success}\nTransaction Info\nTransaction Date: ${dateformat(buy.updatedAt)}\nReference Id: ${buy.referenceId}\n${buy.type}: ${buy.description}\nNetwork: ${buy.provider}\nAmount: ${buy.amount}\nStatus: ${buy.status}`;
 }
 
 module.exports = {

@@ -3,7 +3,7 @@ const { getUserHistory, verifyTransaction } = require("../controllers/userContro
 const { sendDataFormsMenu, sendMainMenu } = require("./message");
 const User = require("../models/userModel");
 const { resetUserState, updateUserState, getUserStateFromDB } = require("../states");
-const { editMessage, sendPhoto } = require("./sender");
+const { editMessage, sendPhoto, sendMessage } = require("./sender");
 const { dateformat, stringify, option, menu } = require("./botfunction");
 
 const handle_callback_data = async (bot, data, messageId, chatId) => {
@@ -65,9 +65,16 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
 
             case 'mainMenu':
                 if (!user) {
-                    
+                    await sendMessage(bot, chatId, "User not found.", stringify([[option('Create account', 'signuser')],[option(`Account issue`, JSON.stringify({
+                        type: "contact",
+                        value: 'support',
+                    }))]]))
                 }
                 await resetUserState(chatId);
+                if (user.admin) {
+                    await sendMessage(bot, chatId, "Admin, select option below", stringify([[menu(chatId)]]));
+                    return;
+                }
                 await sendMainMenu(bot, chatId, messageId);
                 break;
 
