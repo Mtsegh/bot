@@ -57,7 +57,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                                 type: "contact",
                                 value: 'accountIssue',
                             }))],
-                            user.admin?[menu(chatId)]:[option('🔙 Back', 'mainMenu')]
+                            [option('🔙 Back', 'mainMenu')]
                         ],
                     }),
                 });
@@ -77,7 +77,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                 break;
 
             case 'history':
-                const userId = user.admin ? state.bugAccountId : chatId;
+                const userId = user.admin && state.bugAccountId ? state.bugAccountId : chatId;
                 getUserHistory(userId).then(async(history) => {
                     const inlineKeyboard = history.map(tranx => [
                         {

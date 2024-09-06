@@ -5,6 +5,7 @@ const User = require("../models/userModel");
 const forms = require("../api/Data_Plans");
 const { editMessage, sendMessage } = require("./sender");
 const { Admin } = require("./admin");
+const { receiptFormat } = require("./msgoptions");
 
 const callback_default = async (bot, data, parsedData, chatId, messageId) => {
     const state = await getUserStateFromDB(chatId);
@@ -25,11 +26,11 @@ const callback_default = async (bot, data, parsedData, chatId, messageId) => {
             })
             
         } else if (parsedData.type === 'receipt') {
-            const userId = user.admin ? state.bugAccountId : chatId;
+            const userId = user.admin && state.bugAccountId ?  state.bugAccountId : chatId;
             try {
                 getTransaction(userId, parsedData.value).then(async(receipt) => {
                     const options = { reply_markup: { inline_keyboard: [ [{ text: 'Download Receipt', callback_data: 'del' }], [{ text: 'Verify Transaction', callback_data: 'verify' }], [{ text: '🔙 Back', callback_data: 'history' }] ] } };
-                    await editMessage(bot, `Transaction Date: ${receipt.date}\n\nReference Id: ${receipt.referenceId}\n${receipt.type}: ${receipt.description}\nNetwork: ${receipt.provider}\nAmount: ${receipt.amount}\nStatus: ${receipt.status}Date: `, {
+                    await editMessage(bot, `${receiptFormat('', receipt)}`, {
                         chat_id: chatId,
                         message_id: state.msgId,
                         reply_markup: options.reply_markup,

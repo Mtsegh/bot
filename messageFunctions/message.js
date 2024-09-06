@@ -49,7 +49,8 @@ const handle_message = async (bot, msge) => {
                 if (isuser) {
                     await deleteMessage(bot, chatId, msge.message_id)
                     if (state.cpass) {
-                        editMessage(bot, 'Enter New Passcode of at least 4 characters.', {
+                        updateUserState(chatId, { isAUT: false, aut: message, retry: false });
+                        await editMessage(bot, 'Enter New Passcode of at least 4 characters.', {
                             chat_id: chatId,
                             message_id: state.msgId,
                             reply_markup: JSON.stringify({
@@ -57,8 +58,6 @@ const handle_message = async (bot, msge) => {
                                     [{ text: 'Cancel', callback_data: 'mainMenu' }],
                                 ],
                             }),
-                        }).then(async() => {
-                            await updateUserState(chatId, { isAUT: false, aut: message, retry: false });
                         });
                     } else if (state.login) {
                         await deleteMessage(bot, chatId, state.msgId);
@@ -67,15 +66,7 @@ const handle_message = async (bot, msge) => {
                             accountswitch(chatId, message).then(async(login) => {
                                 
                                 if (login.message||login.error) {
-                                    await errorHandler(bot, chatId, msg, `${login.message||login.error}\nPlease contact us with the button below if the issue persists.`, {reply_markup: JSON.stringify({
-                                        inline_keyboard: [
-                                            [option('Try again', 'login')],
-                                            [option('Contact Admin', JSON.stringify({
-                                                type: "contact",
-                                                value: 'accountIssue',
-                                            }))],
-                                        ],
-                                    })})
+                                    await errorHandler(bot, chatId, msg, `${login.message||login.error}`, { extra: 'Try again', back: 'login', contact: 'accountIssue', admin: chatId }, user.admin)
                                     return;
                                 }
                                 await editMessage(bot, login.success, {
@@ -101,11 +92,8 @@ const handle_message = async (bot, msge) => {
                         message_id: state.msgId,
                         reply_markup: JSON.stringify({
                             inline_keyboard: [
-                                [{ text: 'Support', callback_data: JSON.stringify({
-                                    type: "contact",
-                                    value: 'support',
-                                }) }],
-                                [{ text: 'Cancel', callback_data: user?'mainMenu':'login' }],
+                                [option('Support', JSON.stringify({ type: "contact", value: 'support' }))],
+                                [{ text: 'Cancel', callback_data: 'mainMenu' }],
                             ],
                         }),
                     })
@@ -113,21 +101,20 @@ const handle_message = async (bot, msge) => {
             } catch (error) {
                 console.error('Error finding user:', error);
             }
-        } else if (state.cpass && !state.isAUT) {
-            if (message.length >= 4) {
+        } else if ((state.cpass || state.p1c) && !state.isAUT) {
+            if (!(message.length >= 4)) {
+                if (state.retry === true) deleteMessage(bot, chatId, state.msgId)
+                await updateUserState(chatId, { retry: true });
+                await sendMessage(bot, chatId, 'Passcode must be at least 4 characters long. Please try again or click cancel to cancel.', stringify([[{ text: 'Cancel', callback_data: 'mainMenu' }]]));
+                return;
+            }
+            if (state.cpass) {
                 await deleteMessage(bot, chatId, state.msgId);
                 await sendMessage(bot, chatId, 'Updating Passcode...').then((msg) => {
                     changepasscode(state.aut, message).then(async(npc) => {
                         await deleteMessage(bot, chatId, msge.message_id);
                         if (npc.message||npc.error) {
-                            await errorHandler(bot, chatId, msg, `${npc.message||npc.error}\nPlease contact us with the button below if the issue persists.`, {reply_markup: JSON.stringify({
-                                inline_keyboard: [
-                                    [option('Contact Admin', JSON.stringify({
-                                        type: "contact",
-                                        value: 'accountIssue',
-                                    }))],
-                                ],
-                            })})
+                            await errorHandler(bot, chatId, msg, `${npc.message||npc.error}`, { contact: 'accountIssue', back: 'changepass', admin: chatId }, user.admin);
                             return;
                         }
                         await editMessage(bot, npc.success, {
@@ -142,22 +129,25 @@ const handle_message = async (bot, msge) => {
                         await updateUserState(chatId, { retry: false })
                     });
                 })
-            } else {
-                if (state.retry === true) {
-                    return;
-                }
-                await updateUserState(chatId, { retry: true });
-                await editMessage(bot, 'Passcode must be at least 4 characters long. Please try again or click cancel to cancel.', {
+            } else if (state.p1c) {
+                editMessage(bot, 'Passcode Received. Registration in progress...', {
                     chat_id: chatId,
                     message_id: state.msgId,
-                    reply_markup: JSON.stringify({
-                        inline_keyboard: [
-                            [{ text: 'Cancel', callback_data: 'mainMenu' }],
-                        ],
-                    }),
-                });
+                })
+                registerUser(Name, message, chatId).then(async(register) => {
+                    await deleteMessage(bot, chatId, msge.message_id);
+                    if (register.message||register.error) {
+                        await errorHandler(bot, chatId, state.msgId, 
+                            `${register.message||register.error}\n\nPlease click on /start or type */start* to try again.\nYou can contact us with the button below.`, 
+                            { contact: 'accountIssue', back: 'mainMenu' }, false)
+                        return;
+                    }
+                    await deleteMessage(bot, chatId, state.msgId);
+                    await sendStartMessage(bot, chatId, register);
+                    await resetUserState(chatId);
+                }); 
+                
             }
-        
         } else if (state.isPhone) {
             if (/^0[789]\d{9}$/.test(message) && state.isAirtime) {
                 await updateUserState(chatId, { phone: message });
@@ -197,32 +187,8 @@ const handle_message = async (bot, msge) => {
                     }),
                 });
             }
-        } else if (state.p1c) {
-            const passcode = message
-            await editMessage(bot, 'Passcode Received. Registration in progress...', {
-                chat_id: chatId,
-                message_id: state.msgId,
-            }).then(async() => {
-                registerUser(Name, passcode, chatId).then(async(register) => {
-                    await deleteMessage(bot, chatId, msge.message_id);
-                    if (register.message||register.error) {
-                        await errorHandler(bot, chatId, state.msgId, `${register.message||register.error}\n\nPlease click on /start or type */start* to try again.\nYou can contact us with the button below.`, {reply_markup: JSON.stringify({
-                            inline_keyboard: [
-                                [option('Contact Admin', JSON.stringify({
-                                    type: "contact",
-                                    value: 'accountIssue',
-                                }))],
-                            ],
-                        })})
-                        return;
-                    }
-                    await deleteMessage(bot, chatId, state.msgId);
-                    await sendStartMessage(bot, chatId, register);
-                    await resetUserState(chatId);
-                })
-            }); 
-            
-        } else if (state.search && user.admin) {
+        } else if (state.text && user.admin) {
+            updateUserState(chatId, { auth: true, textValue: message, text: false });
             await editMessage(bot, 'Enter passcode to process your request', {
                 chat_id: chatId,
                 message_id: state.msgId,
@@ -232,7 +198,7 @@ const handle_message = async (bot, msge) => {
                     ],
                 }),
             });
-            await updateUserState(chatId, { auth: true, amount: message });
+            console.log('search: ', message);
             
         } else if (state.auth) {
             if (message !== user.passcode) {
@@ -298,7 +264,7 @@ const handle_message = async (bot, msge) => {
     } catch (error) {
         console.error(error);
         
-        await errorHandler(bot, chatId, state.msgId, `Network failed. Try again.\nIf issue persists contact admin`, stringify([[option('Contact', JSON.stringify({ type: 'contact', value: 'accountIssue' }))], [option('🔙 Back', 'mainMenu')]]));
+        await errorHandler(bot, chatId, state.msgId, `Network failed. Try again.\nIf issue persists contact admin`, { contact: 'accountIssue', back: 'mainMenu', admin: chatId }, user.admin);
     }
 }
 
@@ -308,32 +274,25 @@ async function sendStartMessage(bot, chatId, register) {
             await sendMessage(bot, chatId, "User not found")
             return
         }
-        const options = {
-            reply_markup: JSON.stringify({
-                inline_keyboard: [
-                    [{ text: 'Make Purchase', callback_data: 'option1' }],
-                    [{ text: 'Manage Account', callback_data: 'option2' }],
-                ],
-            }),
-        };
+        const options = stringify([
+            [{ text: 'Make Purchase', callback_data: 'option1' }],
+            [{ text: 'Manage Account', callback_data: 'option2' }],
+        ]);
+
         await sendMessage(bot, chatId, `Hello Dear. We are happy to have you on our Vendor Bot. Here is your Account Unique Token \n${register.AUT}. \nYou will need this in case you want to access your VB account on another telegram account, so keep it safe dear, this token contains all your  account info and transactions. Select an option below to proceed:`, options)
             .then(async() => {
                 await updateUserState(chatId, { p1c: false, retry: false });
             });
     } catch (error) {
-        await errorHandler(bot, chatId, state.msgId, `Network failed. Try again.\nIf issue persists contact admin`, stringify([[option('Contact', JSON.stringify({ type: 'contact', value: 'accountIssue' }))], [option('🔙 Back', 'mainMenu')]]));
+        await errorHandler(bot, chatId, state.msgId, `Network failed. Try again.\nIf issue persists contact admin`, { contact: 'accountIssue', back: 'mainMenu', admin: chatId }, false);
     }
 }
 
 async function sendMainMenu(bot, chatId, msgId) {
-    const options = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
+    const options = stringify([
                 [{ text: 'Make Purchase', callback_data: 'option1' }],
                 [{ text: 'Manage Account', callback_data: 'option2' }],
-            ],
-        }),
-    };
+            ])
 
     try {
         if (!msgId) {
@@ -353,14 +312,14 @@ async function sendDataFormsMenu(bot, chatId, messageId) {
         reply_markup: JSON.stringify({
             inline_keyboard: [
                 [{ text: 'MTN', callback_data: 'mtn' }],
-                [{ text: 'Airtel CG', callback_data: 'airtel' }],
+                [{ text: 'Airtel', callback_data: 'airtel' }],
                 [{ text: '9mobile', callback_data: '9mobile' }],
                 [{ text: 'Glo', callback_data: 'glo' }],
                 [{ text: '🔙 Back', callback_data: 'mainMenu' }],
             ],
         }),
     };
-    await editMessage(bot, 'Choose a data form:', {
+    await editMessage(bot, 'Select network:', {
         chat_id: chatId,
         message_id: messageId,
         reply_markup: dataForms.reply_markup,

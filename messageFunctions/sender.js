@@ -14,10 +14,10 @@ async function editMessage(bot, text, details) {
         await bot.editMessageText(text, details);
         console.log('Message edited successfully');
     } catch (error) {
+        deleteMessage(bot, details.chat_id, details.message_id);
         // Check for the specific error
         if (error.message.includes('ETELEGRAM: 400 Bad Request: message is not modified')) {
             console.warn('Message not modified: The new content and reply markup are the same as the current content.');
-            deleteMessage(bot, details.chat_id, details.message_id)
             await sendMessage(bot, details.chat_id, text, details.reply_markup);
         } else {
             await sendMessage(bot, details.chat_id, text, details.reply_markup);

@@ -2,8 +2,7 @@ const User = require("../models/userModel");
 const { updateUserState, getUserStateFromDB } = require("../states");
 const { sendMessage, editMessage } = require("../messageFunctions/sender");
 const Message = require("../models/messageModel");
-const { sendMainMenu } = require("../messageFunctions/message");
-const { stringify } = require("../messageFunctions/botfunction");
+const { stringify, menu, option } = require("../messageFunctions/botfunction");
 
 const protect = async (bot, msg, TId) => {
     try {
@@ -32,8 +31,8 @@ const protect = async (bot, msg, TId) => {
                 user.token = user.admin ? Date.now() + 10*60*1000 : Date.now() + 86400000*2;
                 await user.save();
                 await updateUserState(TId, { signin: false });
-                if (!user.admin) await sendMainMenu(bot, TId, state.msgId);
-                if (user.admin) await sendMessage(bot, TId, "Admin, select option below", stringify([[menu(chatId)]]));
+                if (!user.admin) await sendMessage(bot, TId, 'Choose an option:', stringify([[option('Make Purchase', 'option1')],[option('Manage Account', 'option2')]]));
+                if (user.admin) await sendMessage(bot, TId, "Admin, select option below", stringify([[menu(TId)]]));
                 return { status: false };
             }
             await editMessage(bot, 'Passcode not correct. Please try again.\nEnter passcode to continue:', {
@@ -59,7 +58,7 @@ const protect = async (bot, msg, TId) => {
     } catch (error) {
         console.error(error);
         
-        return { status: false, message: 'An unexpected error occurred.\nContact Admin.'}
+        return { status: false, message: 'An unexpected error occurred.\nContact Admin.'};
     }
     
 };

@@ -106,7 +106,7 @@ const stateSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
-    search: {
+    text: {
         type: Boolean,
         default: false
     },

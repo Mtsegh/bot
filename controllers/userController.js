@@ -9,7 +9,7 @@ const registerUser = asyncHandler(async (name, passcode, TId) => {
     try {
         const exists = await User.findOne({ telegramId: TId });
         if (exists) {
-            return { message: "User exists" };
+            return { message: "User exists." };
         }
         if (!passcode) {
             return { message: 'Passcode expected' };
@@ -34,7 +34,7 @@ const registerUser = asyncHandler(async (name, passcode, TId) => {
             return { message: "Registration failed" };
         }
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}` };
     }
 });
 
@@ -50,7 +50,7 @@ const logout = asyncHandler(async (req, res) => {
         await user.save();
         return { success: "Successfully Logged Out" };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -60,7 +60,7 @@ const changepasscode = asyncHandler(async (aut, passcode) => {
         const user = await User.findOne({ AUT: aut });
         
         if (!user) {
-            return { message: "User not found" };
+            return { message: "User not found. Contact admin." };
         }
         
         user.passcode = passcode;
@@ -77,13 +77,13 @@ const accountswitch = asyncHandler(async (TId, aut) => {
         const user = await User.findOne({ AUT: aut });
         
         if (!user) {
-            return { message: "User Token Not Found" };
+            return { message: "User Token Not Found.\nTry again or contact admin" };
         }
         user.telegramId = TId;
         await user.save();
         return { success: "Login Successful" };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -93,13 +93,13 @@ const getUserHistory = asyncHandler(async (TId) => {
         const user = await User.findOne({ telegramId: TId });
         
         if (!user) {
-            return { message: "User not found" };
+            return { message: "User not found. Contact admin." };
         }
         
         const history = user.transactionHistory;
         return history;
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -109,7 +109,7 @@ const getTransaction = asyncHandler(async (TId, referenceId) => {
         const user = await User.findOne({ telegramId: TId });
         
         if (!user) {
-            return { message: "User not found" };
+            return { message: "User not found. Please try again or contact admin" };
         }
 
         if (!referenceId) {
@@ -120,12 +120,12 @@ const getTransaction = asyncHandler(async (TId, referenceId) => {
         const transactionInfo = history.find(tx => tx.referenceId === referenceId);
         
         if (!transactionInfo) {
-            return { message: "Transaction not found" };
+            return { message: "No transaction found" };
         }
         
         return { transactionInfo };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -139,7 +139,7 @@ const makePurchase = asyncHandler(async (TId, typeofservice, info) => {
         const user = await User.findOne({ telegramId: TId });
 
         if (!user) {
-            return { message: "User not found" };
+            return { message: "User not found. Contact admin." };
         }
 
         const balance = user.balance;
@@ -186,7 +186,7 @@ const makePurchase = asyncHandler(async (TId, typeofservice, info) => {
 
         return { newHistory, success: message };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -200,7 +200,7 @@ const makeDeposit = asyncHandler(async (TId, typeofdeposit, info) => {
         const user = await User.findOne({ telegramId: TId });
 
         if (!user) {
-            return { message: "User not found" };
+            return { message: "User not found. Contact admin." };
         }
 
         const balance = user.balance;
@@ -208,7 +208,7 @@ const makeDeposit = asyncHandler(async (TId, typeofdeposit, info) => {
         try {
             depositamount = parseInt(info.amount);
         } catch (error) {
-            return { error: error.message };
+            return { error: `${error.message}\nTry again or contact admin` };
         }
         
         const newbalance = balance + depositamount;
@@ -239,7 +239,7 @@ const makeDeposit = asyncHandler(async (TId, typeofdeposit, info) => {
 
         return { success: 'Deposit Successful', newHistory };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 
@@ -269,7 +269,7 @@ const verifyTransaction = asyncHandler(async (TId, referenceId) => {
         
         return { confirmedStatus };
     } catch (error) {
-        return { error: error.message };
+        return { error: `${error.message}\nTry again or contact admin` };
     }
 });
 

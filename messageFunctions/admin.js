@@ -22,6 +22,7 @@ const Admin = async(bot, admin, TId, action) => {
                     ]
                 })
             }
+            resetUserState(admin)
             deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, "Admin, select option below", options);
             break;
@@ -85,9 +86,9 @@ const Admin = async(bot, admin, TId, action) => {
                         ],
                     }),
                 });
-            } else if (action === 'userDeposit' || action === 'search') {
-                const text = action === 'userDeposit' ? "Enter amount to deposit" : 'Enter your search to continue...';
-                updateUserState(admin, { authaction: action, search: true, buAccountId: TId, isAdmin: true });
+            } else if (action === 'userDeposit' || action === 'search' || action === 'chat' ) {
+                const text = action === 'userDeposit' ? "Enter amount to deposit" : action === 'search' ? 'Please use "key: value" format.\nEnter your search to continue...' : `Enter message for User~${TId}`;
+                updateUserState(admin, { authaction: action, text: true, bugAccountId: TId, isAdmin: true });
                 await editMessage(bot, text, {
                     chat_id: admin,
                     message_id: state.msgId,
@@ -131,7 +132,7 @@ class Contactadmin {
                             [callback('Resolved', contactId, "userIssueResolved")],
                             [menu(admin.telegramId)],
                         ])
-                    await sendMessage(bot, admin.telegramId, `${date}\n${contactId}\n\n${bug}`, options).then(async(msg) => {
+                    sendMessage(bot, admin.telegramId, `${date}\n${contactId}\n\n${bug}`, options).then(async(msg) => {
                         msgs[admin.telegramId] = msg
                     });                
                 } catch (error) {

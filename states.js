@@ -25,7 +25,6 @@ const states = {
     signin: false,
     login: false,
     isAdmin: false,
-    search: false
 }
 
 // Function to update user state
