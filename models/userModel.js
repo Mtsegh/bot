@@ -63,9 +63,8 @@ const userSchema = mongoose.Schema({
         //   maxLength: [23, "Password must not be more than 23 characters"],
     },
     accountstatus: {
-        type: String,
-        enum: ['verified', 'suspended', 'blocked'],
-        default: 'verified'
+        type: Boolean,
+        default: false
     },
     transactionHistory: [transactionHistorySchema],
     balance: {

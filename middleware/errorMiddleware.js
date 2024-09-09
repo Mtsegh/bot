@@ -4,7 +4,7 @@ const { editMessage } = require("../messageFunctions/sender");
 
 const errorHandler = async (bot, chatId, messageId, errorMessage, options, isAdmin=false) => {
     let buttons;
-    if (!options) {
+    if (!options||!options.back) {
         buttons = stringify([[option('🔙 Back', 'mainMenu')]]);
     } else if (isAdmin) {
         buttons = options.admin?stringify([

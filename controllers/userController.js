@@ -237,7 +237,7 @@ const makeDeposit = asyncHandler(async (TId, typeofdeposit, info) => {
         user.transactionHistory.push(newHistory);
         await user.save();
 
-        return { success: 'Deposit Successful', newHistory };
+        return { success: 'Deposit Successful', newHistory: newHistory, text: user.accountStatus?'Suspend user' : 'Activate user' };
     } catch (error) {
         return { error: `${error.message}\nTry again or contact admin` };
     }

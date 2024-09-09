@@ -70,17 +70,13 @@ const stateSchema = mongoose.Schema({
         type: String,
         default: null
     },
-    bugAccountId: {
-        type: String,
-        default: null
-    },
     bug: {
         type: Boolean,
         default: false
     },
-    notuser: {
-        type: Boolean,
-        default: false
+    reqUser: {
+        type: Object,
+        default: {}
     },
     a: {
         type: Boolean,
@@ -110,7 +106,10 @@ const stateSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
-
+    contact: {
+        type: Object,
+        required: true
+    },
 }, {
     timestamps: true
 });

@@ -93,8 +93,8 @@ const api_user = async () => {
 
     try {
         const response = await axios(config);
-        console.log(JSON.stringify(response.data, null, 2));
-        return response.data;
+        console.log(JSON.stringify(response.data, null, '\n'));
+        return JSON.stringify(response.data, null, '\n');
     } catch (error) {
         console.error('Error:', error.response ? error.response.data : error.message);
         return { Error: error.response ? error.response.data : error.message }

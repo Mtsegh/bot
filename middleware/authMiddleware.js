@@ -10,8 +10,13 @@ const protect = async (bot, msg, TId) => {
         const state = await getUserStateFromDB(TId);
             
         if (!user) {
+            await updateUserState(TId, { reqUser: {} });
             return { status: true, message: "User not found" };
+        } else {
+            updateUserState(TId, { reqUser: user });
         }
+
+        
         const token = user.token
         console.log('Your token', token)
         

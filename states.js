@@ -17,14 +17,13 @@ const states = {
     bug: false,
     bugType: null,
     retry: false,
-    notuser: false,
     p1c: false,
-    ref: false,
-    bugAccountId: null,
+    ref: {},
     text: false,
     signin: false,
     login: false,
     isAdmin: false,
+    contact: {}
 }
 
 // Function to update user state
@@ -56,7 +55,7 @@ async function getUserStateFromDB(chatId) {
     try {
         const state = await State.findOne({ userId: chatId });
         if (!state) {
-            const updatedState = await State.create({userId: chatId, ...states});
+            const updatedState = await State.create({userId: chatId, reqUser: {}, ...states});
     
             if (!updatedState) {
                 console.log('Failed to create state in DB:', chatId);

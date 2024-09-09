@@ -2,11 +2,12 @@ const { key, extractNairaAmount, extractDataAmount, callback, menu, option, stri
 const { registerUser, changepasscode, accountswitch } = require("../controllers/userController");
 const User = require("../models/userModel");
 const { getUserStateFromDB, updateUserState, resetUserState } = require("../states");
-const { secured, Adminauth } = require("./auth");
+const { secured, Adminauth, searchUser } = require("./auth");
 const { deleteMessage, sendMessage, editMessage } = require("./sender");
 const errorHandler = require("../middleware/errorMiddleware");
 const { saveMessageData } = require("../middleware/authMiddleware");
 const { Contactadmin } = require("./admin");
+const { AirtimeAmounts } = require("./msgoptions");
 
 const handle_message = async (bot, msge) => {
     const chatId = msge.chat.id;
@@ -14,7 +15,7 @@ const handle_message = async (bot, msge) => {
     const Name = msge.chat.first_name
     console.log(Name);
     const state = await getUserStateFromDB(chatId);
-    const user = await User.findOne({telegramId:chatId});
+    const user = state.reqUser;
     await saveMessageData(msge)   
     const aut_regex = /^\$\d{13}@[MTSEGHNADOO]{10}$/
     
@@ -23,10 +24,10 @@ const handle_message = async (bot, msge) => {
             if (!state) {
                 return "An error occured;"
             }
-            if (!user) {
+            if (!user.name) {
                 const options = { reply_markup: { inline_keyboard: [ [option('Login with AUT', 'login')] ] } };
                 sendMessage(bot, chatId, 'To continue enter a passcode of at least 4 characters.', options).then(async() => {
-                    await updateUserState(chatId, { p1c: true, retry: false, notuser: true });
+                    await updateUserState(chatId, { p1c: true, retry: false });
                 });
             } else {
                 if (!user.admin) await sendMainMenu(bot, chatId, state.msgId);
@@ -151,10 +152,8 @@ const handle_message = async (bot, msge) => {
         } else if (state.isPhone) {
             if (/^0[789]\d{9}$/.test(message) && state.isAirtime) {
                 await updateUserState(chatId, { phone: message });
-                const options = { reply_markup: { inline_keyboard: [ [{ text: '₦50', callback_data: '50' }], [{ text: '₦100', callback_data: '100' }], [{ text: '₦150', callback_data: '150' }], [{ text: '₦200', callback_data: '200' }], [{ text: '₦250', callback_data: '250' }], [{ text: '₦300', callback_data: '300' }], [{ text: '₦350', callback_data: '350' }], [{ text: '₦400', callback_data: '400' }], [{ text: '₦450', callback_data: '450' }], [{ text: '₦500', callback_data: '500' }], [{ text: '🔙 Back', callback_data: 'airtimeOpt' }] ] } };
-                console.log(state.msgId);
                 await deleteMessage(bot, chatId, state.msgId);
-                await sendMessage(bot, chatId, `Select Airtime amount:`, options);
+                await sendMessage(bot, chatId, `Select Airtime amount:`, AirtimeAmounts);
                 await updateUserState(chatId, { retry: false })
             } else if (/^0[789]\d{9}$/.test(message)) {
                 
@@ -189,12 +188,15 @@ const handle_message = async (bot, msge) => {
             }
         } else if (state.text && user.admin) {
             updateUserState(chatId, { auth: true, textValue: message, text: false });
+            if (state.authaction === 'search') {
+                await searchUser(bot, chatId)
+            }
             await editMessage(bot, 'Enter passcode to process your request', {
                 chat_id: chatId,
                 message_id: state.msgId,
                 reply_markup: JSON.stringify({
                     inline_keyboard: [
-                        [callback('🔙 Back', state.bugAccountId, 'allUser')]
+                        [callback('🔙 Back', state.contact.telegramId, 'allUser')]
                     ],
                 }),
             });
@@ -206,7 +208,7 @@ const handle_message = async (bot, msge) => {
                     await sendMessage(bot, chatId, 'Passcode not correct. Please try again.\nEnter passcode:', {
                         reply_markup: JSON.stringify({
                             inline_keyboard: [
-                                [callback('🔙 Back', state.bugAccountId, 'getUser')],
+                                [callback('🔙 Back', state.contact.telegramId, 'getUser')],
                                 [menu(chatId)],
                             ],
                         }),
@@ -228,7 +230,7 @@ const handle_message = async (bot, msge) => {
             }
             await deleteMessage(bot, chatId, msge.message_id)
             if (state.isAdmin) {
-                Adminauth(bot, chatId, state.bugAccountId, state.authaction);
+                Adminauth(bot, chatId, state.contact.telegramId, state.authaction);
             } else { 
                 await secured(bot, state.authaction, chatId, state.msgId)
             }
@@ -242,7 +244,6 @@ const handle_message = async (bot, msge) => {
                     ]
                 })
             }).then(async() => {
-                await updateUserState(chatId, { bugAccountId: chatId })
                 await Contactadmin.send(bot, bug, chatId)
             });
             

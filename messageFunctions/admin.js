@@ -1,23 +1,24 @@
-const { search } = require("../controllers/adminController");
+const { search, getAllUsers } = require("../controllers/adminController");
+const errorHandler = require("../middleware/errorMiddleware");
 const { generateReferenceId } = require("../middleware/userMiddleware");
 const Contact = require("../models/adminModel");
 const { updateUserState, resetUserState, getUserStateFromDB } = require("../states");
-const { menu, stringify, dateformat, callback } = require("./botfunction");
+const { menu, stringify, dateformat, callback, option } = require("./botfunction");
 const { sendMessage, editMessage, deleteMessage } = require("./sender");
 
-const Admin = async(bot, admin, TId, action) => {
-    console.log('admin, TId, action', admin, TId, action);
+const Admin = async(bot, admin, bugAccount, action) => {
     const state = await getUserStateFromDB(admin);
-    console.log(state.msgId);
-    
-    await updateUserState(admin, { buAccountId: TId })
+    const TId = bugAccount.telegramId
+    updateUserState(admin, { contact: bugAccount })
     switch (action) {
+        
         case 'menu':
             const options = {
                 reply_markup: JSON.stringify({
                     inline_keyboard: [
                         [callback(`Transaction as admin`, admin, "tranx")],
                         [callback('View users', admin, "allUsers")],
+                        [callback('TCD API', admin, "API")],
                         [{ text: 'Account Info', callback_data: 'option2'}],
                     ]
                 })
@@ -27,34 +28,90 @@ const Admin = async(bot, admin, TId, action) => {
             await sendMessage(bot, admin, "Admin, select option below", options);
             break;
 
+        case 'allUsers':
+            try {
+                sendMessage(bot, admin, 'Getting Users...').then(async(msg) => {
+                    resetUserState(admin)
+                    getAllUsers(admin).then(async(users) => {
+                        if (users.message||users.error) {
+                            await errorHandler(bot, admin, msg, users.message||users.error, null, true);
+                        } else {                        
+                            const usersOpt = users.map(user => ({
+                                text: `${user.name} ${user.balance}`,
+                                callback_data: JSON.stringify({
+                                    type: "admin",
+                                    user: user.telegramId,
+                                    action: "getUser",
+                                })
+                            }));
+                            
+                            const userOpt = [callback('Search', TId, "search"), ...usersOpt]
+                            userOpt.push(menu(admin));
+                        
+                            const options = stringify(userOpt.map(user => [{ text: user.text, callback_data: user.callback_data }]));
+                        
+                            await editMessage(bot, `No. of users found: ${users.length}\nSelect user to view details`, {
+                                chat_id: admin,
+                                message_id: msg,
+                                reply_markup: options.reply_markup
+                            });
+                        }
+                    })
+                });
+            } catch (error) {
+                await errorHandler(bot, chatId, state.msgId, `Please refresh and try again`, {}, false);
+            }
+            break;
+            
+        case 'getUser':
+            try {
+                sendMessage(bot, admin, 'Getting User info...').then(async(msg) => {
+                    await getUserInfo(admin, TId).then(async(info) => {
+                        if (info.message||info.error) {
+                            await errorHandler(bot, admin, msg, info.message||info.error, { admin: TId, back: 'allUser' }, true);
+                        } else {
+                            const options = stringify([
+                                [callback('Transaction', TId, "tranx")],
+                                [callback('Update balance', TId, "userDeposit")],
+                                [callback(info.text.admin, TId, "makeAdmin")],
+                                [callback(info.text.accountStatus, TId, "suspend")],
+                                [callback('Message', TId, "chat")],
+                            ]);                   
+                            await editMessage(bot, `Heres the info AUT: ${info.AUT}, \nBalance: ${info.balance}, \nDetails: ${info.details}, \nTId: ${info.telegramId}`, {
+                                chat_id: admin,
+                                message_id: msg,
+                                reply_markup: options.reply_markup
+                            });
+                        }
+                    })
+                });
+            } catch (error) {
+                console.error(error);
+                await errorHandler(bot, chatId, state.msgId, `Please refresh and try again`, {}, false);
+            }
+            break;
+    
         case 'tranx':
-            deleteMessage(bot, admin, state.msgId)
-            await updateUserState(admin, { buAccountId: TId })
-            await sendMessage(bot, admin, `Select a purchase option:`, {
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [{ text: 'Buy Data', callback_data: 'dataOpt' }],
-                        [{ text: 'Buy Airtime', callback_data: 'airtimeOpt' }],
-                        [{ text: 'Make Deposit', callback_data: 'depositOpt' }],
-                        [{ text: 'View History', callback_data: 'history' }],
-                        [menu(admin)],
-                    ],
-                }),
-            });
+            try {
+                deleteMessage(bot, admin, state.msgId);
+                await sendMessage(bot, admin, `Select a purchase option:`, {
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [{ text: 'Buy Data', callback_data: 'dataOpt' }],
+                            [{ text: 'Buy Airtime', callback_data: 'airtimeOpt' }],
+                            [{ text: 'Make Deposit', callback_data: 'depositOpt' }],
+                            [{ text: 'View History', callback_data: 'history' }],
+                            [menu(admin)],
+                        ],
+                    }),
+                });
+            } catch (error) {
+                console.error(error);
+                await errorHandler(bot, chatId, state.msgId, `Please refresh and try again`, {}, false);
+            }
             
             break;
         
-        case 'status':
-            await sendMessage(bot, admin, `User status will affect their access to vendor bot`, {
-                reply_markup: JSON.stringify({
-                    inline_keyboard: [
-                        [callback('Suspend User', TId, "suspend")],
-                        [callback('API Data history', TId, "toVerify")],
-                        [menu(admin)],
-                    ],
-                }),
-            });
-            break 
         case 'API':
             deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, `Handle your API:`, {
@@ -70,13 +127,9 @@ const Admin = async(bot, admin, TId, action) => {
             
             break;
         
-        case 'solved':
-            await Contactadmin.update(TId)
-            break;
-
         default:
-            if (action === 'allUsers' || action === 'getUser' || action === 'suspend' || action === 'toVerified' || action === 'makeAdmin' || action === 'api_datory' || action === 'api_airtory' || action === 'api_user') {
-                updateUserState(admin, { authaction: action, auth: true, bugAccountId: TId, isAdmin: true });
+            if (action === 'suspend' || action === 'toVerified' || action === 'makeAdmin' || action === 'api_datory' || action === 'api_airtory' || action === 'api_user') {
+                updateUserState(admin, { authaction: action, auth: true, isAdmin: true });
                 console.log(TId);
                 
                 await editMessage(bot, 'Enter Password to continue...', {
@@ -89,8 +142,8 @@ const Admin = async(bot, admin, TId, action) => {
                     }),
                 });
             } else if (action === 'userDeposit' || action === 'search' || action === 'chat' ) {
-                const text = action === 'userDeposit' ? "Enter amount to deposit" : action === 'search' ? 'Please use "key: value" format.\nEnter your search to continue...' : `Enter message for User~${TId}`;
-                updateUserState(admin, { authaction: action, text: true, bugAccountId: TId, isAdmin: true });
+                const text = action === 'userDeposit' ? "Enter amount to deposit" : action === 'search' ? 'Please use "key: value" format.\nEnter your search to continue...' : `Enter message for User~${bugAccount.name}`;
+                updateUserState(admin, { authaction: action, text: true, isAdmin: true });
                 await editMessage(bot, text, {
                     chat_id: admin,
                     message_id: state.msgId,
@@ -130,7 +183,7 @@ class Contactadmin {
                 try {
                     sendMessage(bot, admin.telegramId, `${date}\n${contactId}\n\n${bug}`, stringify([
                         [callback('View Account', TId, "getUser")],
-                        [callback('Resolved', contactId, "done")],
+                        [option('Resolved', `bug_${contactId}`)],
                         [menu(admin.telegramId)],
                     ])).then(async(msg) => {
                         updateUserState(admin.telegramId, {msgId: null})
@@ -167,7 +220,6 @@ class Contactadmin {
                     })
                 } catch (error) {
                     console.error('Error in Update: ', error);
-                    
                 }
             });  
         } catch (error) {

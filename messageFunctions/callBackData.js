@@ -19,8 +19,8 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
         }
     }
         
-    const user = await User.findOne({telegramId:chatId});
     const state = await getUserStateFromDB(chatId);
+    const user = state.reqUser;
     
     try {
         switch (data) {
@@ -70,12 +70,13 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                         value: 'support',
                     }))]]))
                 }
-                await resetUserState(chatId);
+                resetUserState(chatId);
                 if (user.admin) {
                     await sendMessage(bot, chatId, "Admin, select option below", stringify([[menu(chatId)]]));
                     return;
                 }
                 await sendMainMenu(bot, chatId, messageId);
+                
                 break;
 
             case 'airtimeOpt':
@@ -84,7 +85,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                 break;
 
             case 'history':
-                const userId = user.admin && state.bugAccountId ? state.bugAccountId : chatId;
+                const userId = user.admin && state.contact.telegramId ? state.contact.telegramId : chatId;
                 getUserHistory(userId).then(async(history) => {
                     const inlineKeyboard = history.map(tranx => [
                         {
@@ -104,7 +105,6 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                             inline_keyboard: inlineKeyboard
                         })
                     };
-                    await updateUserState(chatId, {ref: true})
                     await editMessage(bot, "Here are your recent transactions", {
                         chat_id: chatId,
                         message_id: messageId,
@@ -120,7 +120,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                     message_id: messageId,
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
-                            [{ text: 'Cancel', callback_data: state.notuser?'signUser':'mainMenu' }],
+                            [{ text: 'Cancel', callback_data: !user.name?'signUser':'mainMenu' }],
                         ],
                     }),
                 });

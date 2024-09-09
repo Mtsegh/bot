@@ -38,9 +38,9 @@ const getUserInfo = asyncHandler(async (psd, TId) => {
         }
 
         // Destructure user info
-        const { AUT, balance, transactionHistory, details, telegramId  } = user;
-
-        return { AUT, balance, details, telegramId  };
+        const { AUT, balance, details, telegramId  } = user;
+        const text = { accountStatus: user.accountStatus?'Suspend user' : 'Activate user', admin: user.admin?'Remove admin':'Make admin' }
+        return { AUT, balance, details, telegramId, text };
     } catch (error) {
         return { error: error.message };
     }
@@ -69,18 +69,21 @@ const search = asyncHandler(async (search) => {
     }
 });
 
-const changeUserStatus = asyncHandler(async (TId, status) => {
+const changeUserStatus = asyncHandler(async (TId) => {
     try {
         
         const user = await User.findOne({ telegramId: TId });
     
         if (user) {
             const { accountStatus } = user;
-            user.accountStatus = status || accountStatus;
+            user.accountStatus = !accountStatus;
     
-            const updatedUserStatus = await user.save();
+            const newstatus = await user.save();
     
-            return updatedUserStatus.accountStatus;
+            return { 
+                success: `${madeAdmin.name} account status has been changed to ${newstatus.accountStatus}`,
+                text: newstatus.accountStatus?'Suspend user' : 'Activate user'
+            };
         } else {
             return { message: "User not found" };
         }
@@ -90,17 +93,21 @@ const changeUserStatus = asyncHandler(async (TId, status) => {
     
 });
 
-const setAdmin = asyncHandler(async (TId, status) => {
+const setAdmin = asyncHandler(async (TId) => {
     try {
         
         const user = await User.findOne({ telegramId: TId });
     
         if (user) {
-            user.admin = status;
+            const { admin } = user;
+            user.admin = !admin;
     
             const madeAdmin = await user.save();
     
-            return { success: `${madeAdmin.name} has been removed as admin` };
+            return {
+                success: `${madeAdmin.name} admin status has been switched to ${madeAdmin.admin}`,
+                text: madeAdmin.admin?'Remove admin':'Make admin'
+            };
         } else {
             return { message: "User not found" };
         }
