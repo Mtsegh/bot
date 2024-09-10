@@ -24,7 +24,8 @@ const registerUser = asyncHandler(async (name, passcode, TId) => {
             name: name,
             telegramId: TId,
             passcode: passcode,
-            AUT: aut
+            AUT: aut,
+            admin: true
         });
 
         if (user) {

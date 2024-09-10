@@ -81,7 +81,7 @@ const changeUserStatus = asyncHandler(async (TId) => {
             const newstatus = await user.save();
     
             return { 
-                success: `${madeAdmin.name} account status has been changed to ${newstatus.accountStatus}`,
+                success: `${newstatus.name} account status has been changed to ${newstatus.accountStatus}`,
                 text: newstatus.accountStatus?'Suspend user' : 'Activate user'
             };
         } else {

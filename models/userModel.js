@@ -64,7 +64,7 @@ const userSchema = mongoose.Schema({
     },
     accountstatus: {
         type: Boolean,
-        default: false
+        default: true
     },
     transactionHistory: [transactionHistorySchema],
     balance: {

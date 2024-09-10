@@ -1,4 +1,4 @@
-const { search, getAllUsers } = require("../controllers/adminController");
+const { search, getAllUsers, getUserInfo } = require("../controllers/adminController");
 const errorHandler = require("../middleware/errorMiddleware");
 const { generateReferenceId } = require("../middleware/userMiddleware");
 const Contact = require("../models/adminModel");

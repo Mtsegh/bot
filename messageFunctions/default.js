@@ -49,10 +49,10 @@ const callback_default = async (bot, data, parsedData, chatId, messageId) => {
             
         } else if (parsedData.type === 'admin') {
             if (!user.accountstatus) {
-                await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'support', back: 'contactUs', admin: state.contact.telegramId }, user.admin);
+                await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'support', back: 'contactUs', admin: chatId }, user?.admin||false);
             }
             let contact
-            if (state.contact.telegramId!==parsedData.user) {
+            if (state?.contact?.telegramId!==parsedData.user) {
                 contact = await User.findOne({ telegramId: parsedData.user });
             } else {
                 contact = state.contact

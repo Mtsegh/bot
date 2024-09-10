@@ -11,8 +11,8 @@ const service = ['data', 'airtime'];
     
 const secured = async(bot, authaction, chatId, msgId) => {
     const state = await getUserStateFromDB(chatId)
-    const user = state.reqUser;
-    const userId = user.admin && state.contact.telegramId ? state.contact.telegramId : chatId;
+    const user = state?.reqUser || {};
+    const userId = user?.admin && state?.contact?.telegramId ? state?.contact?.telegramId : chatId;
     if (user.accountstatus === 'susended') {
         await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'buy', back: 'contactUs', admin: state.contact.telegramId }, user.admin);
     }
@@ -66,7 +66,7 @@ const Adminauth = async(bot, admin, TId, action) => {
     switch (action) {
         case 'suspend':
             try {
-                await bot.sendMessage(admin, 'Suspending user...').then(async(msg) => {
+                await sendMessage(bot, admin, 'Changing user status...').then(async(msg) => {
                     await changeUserStatus(TId).then(async(status) => {
                         if (status.message||status.error) {
                             await errorHandler(bot, admin, msg, status.message||status.error, { admin: TId, back: 'getUser' }, true);

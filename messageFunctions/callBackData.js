@@ -20,8 +20,12 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
     }
         
     const state = await getUserStateFromDB(chatId);
-    const user = state.reqUser;
-    
+    const user = state?.reqUser || {};
+    if (!user?.name) {
+        data = 'signUser';
+    }
+
+
     try {
         switch (data) {
             case 'option1':
@@ -71,6 +75,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                     }))]]))
                 }
                 resetUserState(chatId);
+
                 if (user.admin) {
                     await sendMessage(bot, chatId, "Admin, select option below", stringify([[menu(chatId)]]));
                     return;
@@ -85,7 +90,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                 break;
 
             case 'history':
-                const userId = user.admin && state.contact.telegramId ? state.contact.telegramId : chatId;
+                const userId = user?.admin && state?.contact?.telegramId ? state?.contact?.telegramId : chatId;
                 getUserHistory(userId).then(async(history) => {
                     const inlineKeyboard = history.map(tranx => [
                         {
@@ -224,8 +229,14 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                 break;
             
             case 'signUser':
-                if (!user) {
-                    const options = stringify([ [option('Login with AUT', 'login')] ]);
+                if (!user?.name) {
+                    const options = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: "Login with AUT", callback_data: "login" }]
+                            ]
+                        }
+                    };
                     editMessage(bot, 'To continue enter a passcode of at least 4 characters.', {
                         chat_id: chatId,
                         message_id: messageId,
@@ -234,6 +245,8 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                         await updateUserState(chatId, { p1c: true, msgId: messageId, isAUT: false });
                     });
                 } else {
+                    console.log(user.name);
+                    
                     await sendMainMenu(bot, chatId, state.msgId);
                 }
                 break;
