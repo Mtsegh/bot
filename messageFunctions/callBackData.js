@@ -2,7 +2,7 @@ const callback_default = require("./default");
 const { getUserHistory, verifyTransaction } = require("../controllers/userController");
 const { sendDataFormsMenu, sendMainMenu } = require("./message");
 const User = require("../models/userModel");
-const { resetUserState, updateUserState, getUserStateFromDB } = require("../states");
+const { resetUserState, updateUserState, getUserStateFromDB } = require("../controllers/stateController");
 const { editMessage, sendPhoto, sendMessage } = require("./sender");
 const { dateformat, stringify, option, menu } = require("./botfunction");
 
@@ -205,7 +205,7 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                     message_id: messageId,
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
-                            [{ text: 'copy Account No.', callback_data: 'copy' }],
+                            [{ text: 'Copy Account No.', callback_data: 'copy' }],
                             [{ text: 'Send details for verification', callback_data: JSON.stringify({
                                 type: "contact",
                                 value: 'manualTrans',
@@ -231,11 +231,11 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
             case 'signUser':
                 if (!user?.name) {
                     const options = {
-                        reply_markup: {
+                        reply_markup: JSON.stringify({
                             inline_keyboard: [
                                 [{ text: "Login with AUT", callback_data: "login" }]
                             ]
-                        }
+                        })
                     };
                     editMessage(bot, 'To continue enter a passcode of at least 4 characters.', {
                         chat_id: chatId,
@@ -245,8 +245,6 @@ const handle_callback_data = async (bot, data, messageId, chatId) => {
                         await updateUserState(chatId, { p1c: true, msgId: messageId, isAUT: false });
                     });
                 } else {
-                    console.log(user.name);
-                    
                     await sendMainMenu(bot, chatId, state.msgId);
                 }
                 break;

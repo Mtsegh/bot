@@ -1,6 +1,6 @@
 const { findServicePlanText, mtn_plans, option, stringify } = require("./botfunction");
 const { getTransaction } = require("../controllers/userController");
-const { updateUserState, getUserStateFromDB } = require("../states");
+const { updateUserState, getUserStateFromDB } = require("../controllers/stateController");
 const User = require("../models/userModel");
 const forms = require("../api/Data_Plans");
 const { editMessage, sendMessage } = require("./sender");
@@ -10,7 +10,7 @@ const errorHandler = require("../middleware/errorMiddleware");
 
 const callback_default = async (bot, data, parsedData, chatId, messageId) => {
     const state = await getUserStateFromDB(chatId);
-    const user = state.reqUser;
+    const user = state?.reqUser||{};
     if (parsedData) {
         if (parsedData.type === 'airtimeOpt') {
             editMessage(bot, "Enter Receiver's Phone Number", {
@@ -30,13 +30,14 @@ const callback_default = async (bot, data, parsedData, chatId, messageId) => {
             const userId = user.admin && state.contact.telegramId ?  state.contact.telegramId : chatId;
             try {
                 getTransaction(userId, parsedData.value).then(async(receipt) => {
-                    updateUserState(chatId, { ref: receipt })
+                    const info = receiptFormat('', receipt);
+                    updateUserState(chatId, { ref: info.forReceipt })
                     const options = stringify([
                         [option('Download Receipt', 'download')],
                         [option('Verify Transaction', 'verify')],
                         [option('🔙 Back', 'history')]
                     ]);
-                    await editMessage(bot, `${receiptFormat('', receipt)}`, {
+                    await editMessage(bot, info.message, {
                         chat_id: chatId,
                         message_id: state.msgId,
                         reply_markup: options.reply_markup,
@@ -47,9 +48,10 @@ const callback_default = async (bot, data, parsedData, chatId, messageId) => {
                 await errorHandler(bot, chatId, state.msgId, `Network error. Try again.`, stringify([[option('Contact', json({ type: 'contact', value: 'buy' }))], [option('🔙 Back', 'option2')]]));
             }
             
-        } else if (parsedData.type === 'admin') {
-            if (!user.accountstatus) {
-                await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'support', back: 'contactUs', admin: chatId }, user?.admin||false);
+        } else if (parsedData.type === 'admin' && user?.admin) {
+            if (!user?.accountstatus) {
+                await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'support', back: 'contactUs' }, false);
+                //return;
             }
             let contact
             if (state?.contact?.telegramId!==parsedData.user) {

@@ -1,4 +1,4 @@
-const State = require('./models/statesModel');
+const State = require("../models/statesModel");
 
 const states = {
     phone: null,

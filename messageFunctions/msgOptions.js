@@ -7,7 +7,8 @@ const receiptOpt = stringify([
 ]);
 
 const receiptFormat = (success, buy) => {
-    return `${success}\nTransaction Info\nTransaction Date: ${dateformat(buy.updatedAt)}\nReference Id: ${buy.referenceId}\n${buy.type}: ${buy.description}\nNetwork: ${buy.provider}\nAmount: ${buy.amount}\nStatus: ${buy.status}`;
+    const forReceipt = {refid: buy.referenceId, type: buy.type, quantity: buy.description, network: buy.provider, amount: buy.amount, status: buy.status, date: dateformat(buy.createdAt) };
+    return { forReceipt: forReceipt, message: `${success+'\n'}Transaction Info\nTransaction Date: ${dateformat(buy.createdAt)}\nReference Id: ${buy.referenceId}\n${buy.type}: ${buy.description}\nNetwork: ${buy.provider}\nAmount: ${buy.amount}\nStatus: ${buy.status}` }
 }
 
 const AirtimeAmounts = stringify([
@@ -23,9 +24,16 @@ const AirtimeAmounts = stringify([
     [{ text: '₦500', callback_data: '500' }],
     [{ text: '🔙 Back', callback_data: 'airtimeOpt' }]
 ]);
+const editMsgInfo = (chatId, msgId) => {
+    return {
+        chat_id: chatId,
+        message_id: msgId
+    }
+}
 
 module.exports = {
     receiptOpt,
     receiptFormat,
-    AirtimeAmounts
+    AirtimeAmounts,
+    editMsgInfo
 }

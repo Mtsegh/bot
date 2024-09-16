@@ -8,16 +8,13 @@ const transactionHistorySchema = mongoose.Schema({
         type: String,
         required: true,
     },
-    API_Id: {
-        type: String
-    },
     amount: {
         type: Number,
         required: true
     },
     type: {
         type: String,
-        enum: ['Deposit', 'Data purchase', 'Airtime purchase'],
+        enum: ['Deposit', 'Data Purchase', 'Airtime Purchase'],
         required: true
     },
     description: {
@@ -28,7 +25,7 @@ const transactionHistorySchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['failed', 'pending', 'completed'],
+        enum: ['failed', 'pending', 'completed', 'sucessfull'],
         required: true
     },
     createdAt: {

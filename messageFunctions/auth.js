@@ -1,11 +1,11 @@
-const { updateUserState, getUserStateFromDB, resetUserState } = require("../states");
+const { updateUserState, getUserStateFromDB, resetUserState } = require("../controllers/stateController");
 const User = require("../models/userModel");
 const { makePurchase, makeDeposit } = require("../controllers/userController");
 const { menu, callback, stringify, getValidity, parseInput } = require("./botfunction");
-const { setAdmin,  changeUserStatus } = require("../controllers/adminController");
+const { setAdmin,  changeUserStatus, search } = require("../controllers/adminController");
 const errorHandler = require("../middleware/errorMiddleware");
-const { sendMessage, editMessage } = require("./sender");
-const { receiptOpt, receiptFormat } = require("./msgoptions");
+const { sendMessage, editMessage, deleteMessage } = require("./sender");
+const { receiptOpt, receiptFormat, editMsgInfo } = require("./msgoptions");
 const { api_airtory, api_datory, api_user, verify } = require("../api/api");
 const service = ['data', 'airtime'];
     
@@ -14,13 +14,14 @@ const secured = async(bot, authaction, chatId, msgId) => {
     const user = state?.reqUser || {};
     const userId = user?.admin && state?.contact?.telegramId ? state?.contact?.telegramId : chatId;
     if (user.accountstatus === 'susended') {
-        await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'buy', back: 'contactUs', admin: state.contact.telegramId }, user.admin);
+        await errorHandler(bot, chatId, state.msgId, `Your account has been suspended contact Admin.`, { contact: 'buy', back: 'contactUs', admin: state.contact.telegramId }, false);
+        return;
     }
     if (authaction==="buydata") {
         try {
             editMessage(bot, 'Transaction processing...', {chat_id: chatId, message_id: msgId}).then(async() => {
                 const info = { amount: state.amount, network_id: state.network_id, plan_id: state.plan_id, 
-                    purchase: 'Data Purchase', validity: getValidity(state.textValue) }
+                    purchase: 'Data Purchase', validity: getValidity(state.textValue), phone: state.phone }
                 
                 makePurchase(userId, service[0], info).then(async(buy) => {
                     if (buy.message||buy.error) {
@@ -41,12 +42,12 @@ const secured = async(bot, authaction, chatId, msgId) => {
     } else if (authaction==="airtime") {
         try {
             editMessage(bot, 'Transaction processing...', {chat_id: chatId, message_id: msgId});
-            const info = { amount: state.amount, network_id: state.network_id, purchase: 'Airtime Purchase', validity: 'Validated' }
+            const info = { amount: state.amount, network_id: state.network_id, purchase: 'Airtime Purchase', validity: 'VTU', phone: state.phone }
             makePurchase(userId, service[1], info).then(async(buy) => {
                 if (buy.message||buy.error) {
                     await errorHandler(bot, chatId, state.msgId, buy.message||buy.error, { contact: 'buy', back: 'dataOpt', admin: state.contact.telegramId }, user.admin);
                 } else {                        
-                    
+                    updateUserState(chatId, { ref: buy.newHistory })
                     await editMessage(bot, receiptFormat(buy.success, buy.newHistory), {
                         chat_id: chatId,
                         message_id: state.msgId,
@@ -63,6 +64,7 @@ const secured = async(bot, authaction, chatId, msgId) => {
 const Adminauth = async(bot, admin, TId, action) => {
     console.log('admin, TId, action', admin, TId, action);
     const state = await getUserStateFromDB(admin);
+    deleteMessage(bot, admin, state.msgId)
     switch (action) {
         case 'suspend':
             try {
@@ -149,18 +151,17 @@ const Adminauth = async(bot, admin, TId, action) => {
         case 'chat':
             try {
                 const send = await sendMessage(bot, TId, `Admin message: ${state.textValue}`)
-                if (send) {                
-                    await editMessage(bot, 'Message sent successfully', {
-                        chat_id: admin,
-                        message_id: state.msgId,
-                        reply_markup: JSON.stringify({
-                            inline_keyboard: [
-                                [callback('🔙 Back', TId, "getUser")],
-                                [menu(admin)],
-                            ],
-                        }),
-                    })
-                }
+                const msg = send ? 'Message sent successfully' : 'Unble to send message. Try again.';
+                await editMessage(bot, msg, {
+                    chat_id: admin,
+                    message_id: state.msgId,
+                    reply_markup: JSON.stringify({
+                        inline_keyboard: [
+                            [callback('🔙 Back', TId, "getUser")],
+                            [menu(admin)],
+                        ],
+                    }),
+                })
                 await updateUserState(admin, { retry: false });
             } catch (error) {
                 console.error(error);
@@ -224,8 +225,8 @@ const Adminauth = async(bot, admin, TId, action) => {
 const searchUser = async (bot, admin) => {
 
     try {
+        const state = await getUserStateFromDB(admin);
         await sendMessage(bot, admin, 'Searching user...').then(async (msg) => {
-            const state = await getUserStateFromDB(admin);
             const parsed = parseInput(state.textValue)
             const result = await search(parsed);
     

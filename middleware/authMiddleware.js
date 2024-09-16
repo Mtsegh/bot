@@ -1,5 +1,5 @@
 const User = require("../models/userModel");
-const { updateUserState, getUserStateFromDB } = require("../states");
+const { updateUserState, getUserStateFromDB } = require("../controllers/stateController");
 const { sendMessage, editMessage } = require("../messageFunctions/sender");
 const Message = require("../models/messageModel");
 const { stringify, menu, option } = require("../messageFunctions/botfunction");
@@ -8,7 +8,7 @@ const protect = async (bot, msg, TId) => {
     try {
         const user = await User.findOne({ telegramId: TId })
         const state = await getUserStateFromDB(TId);
-            
+           
         if (!user) {
             await updateUserState(TId, { reqUser: {} });
             return { status: true, message: "User not found" };

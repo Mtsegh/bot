@@ -1,15 +1,16 @@
 const { search, getAllUsers, getUserInfo } = require("../controllers/adminController");
+const { getUserStateFromDB, resetUserState, updateUserState } = require("../controllers/stateController");
 const errorHandler = require("../middleware/errorMiddleware");
 const { generateReferenceId } = require("../middleware/userMiddleware");
 const Contact = require("../models/adminModel");
-const { updateUserState, resetUserState, getUserStateFromDB } = require("../states");
 const { menu, stringify, dateformat, callback, option } = require("./botfunction");
+const { editMsgInfo } = require("./msgoptions");
 const { sendMessage, editMessage, deleteMessage } = require("./sender");
 
 const Admin = async(bot, admin, bugAccount, action) => {
-    const state = await getUserStateFromDB(admin);
     const TId = bugAccount.telegramId
-    updateUserState(admin, { contact: bugAccount })
+    const state = await updateUserState(admin, { contact: bugAccount });
+    deleteMessage(bot, admin, state.msgId);
     switch (action) {
         
         case 'menu':
@@ -24,7 +25,6 @@ const Admin = async(bot, admin, bugAccount, action) => {
                 })
             }
             resetUserState(admin)
-            deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, "Admin, select option below", options);
             break;
 
@@ -74,10 +74,11 @@ const Admin = async(bot, admin, bugAccount, action) => {
                                 [callback('Transaction', TId, "tranx")],
                                 [callback('Update balance', TId, "userDeposit")],
                                 [callback(info.text.admin, TId, "makeAdmin")],
-                                [callback(info.text.accountStatus, TId, "suspend")],
+                                [callback(info.text.accountstatus, TId, "suspend")],
                                 [callback('Message', TId, "chat")],
+                                [menu(admin)],
                             ]);                   
-                            await editMessage(bot, `Heres the info AUT: ${info.AUT}, \nBalance: ${info.balance}, \nDetails: ${info.details}, \nTId: ${info.telegramId}`, {
+                            await editMessage(bot, `Heres the info AUT: ${info.AUT},${info.admin} \nBalance: ${info.balance}, \nDetails: ${info.details}, \nTId: ${info.telegramId}`, {
                                 chat_id: admin,
                                 message_id: msg,
                                 reply_markup: options.reply_markup
@@ -93,7 +94,6 @@ const Admin = async(bot, admin, bugAccount, action) => {
     
         case 'tranx':
             try {
-                deleteMessage(bot, admin, state.msgId);
                 await sendMessage(bot, admin, `Select a purchase option:`, {
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
@@ -113,7 +113,6 @@ const Admin = async(bot, admin, bugAccount, action) => {
             break;
         
         case 'API':
-            deleteMessage(bot, admin, state.msgId)
             await sendMessage(bot, admin, `Handle your API:`, {
                 reply_markup: JSON.stringify({
                     inline_keyboard: [
@@ -132,9 +131,7 @@ const Admin = async(bot, admin, bugAccount, action) => {
                 updateUserState(admin, { authaction: action, auth: true, isAdmin: true });
                 console.log(TId);
                 
-                await editMessage(bot, 'Enter Password to continue...', {
-                    chat_id: admin,
-                    message_id: state.msgId,
+                await sendMessage(bot, admin, 'Enter Password to continue...', {
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
                             [callback('Cancel', admin, "menu")],
@@ -144,9 +141,7 @@ const Admin = async(bot, admin, bugAccount, action) => {
             } else if (action === 'userDeposit' || action === 'search' || action === 'chat' ) {
                 const text = action === 'userDeposit' ? "Enter amount to deposit" : action === 'search' ? 'Please use "key: value" format.\nEnter your search to continue...' : `Enter message for User~${bugAccount.name}`;
                 updateUserState(admin, { authaction: action, text: true, isAdmin: true });
-                await editMessage(bot, text, {
-                    chat_id: admin,
-                    message_id: state.msgId,
+                await sendMessage(bot, admin, text, {
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
                             [callback('Cancel', admin, "menu")],
@@ -155,9 +150,7 @@ const Admin = async(bot, admin, bugAccount, action) => {
                 });
             } else {
                 console.log(action);
-                await editMessage(bot, "Invalid selection. Please choose a valid option.", {
-                    chat_id: admin,
-                    message_id: state.msgId,
+                await sendMessage(bot, admin, "Invalid selection. Please choose a valid option.", {
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
                             [menu(admin)],

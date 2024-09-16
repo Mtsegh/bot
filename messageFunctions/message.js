@@ -1,7 +1,7 @@
 const { key, extractNairaAmount, extractDataAmount, callback, menu, option, stringify } = require("./botfunction");
 const { registerUser, changepasscode, accountswitch } = require("../controllers/userController");
 const User = require("../models/userModel");
-const { getUserStateFromDB, updateUserState, resetUserState } = require("../states");
+const { getUserStateFromDB, updateUserState, resetUserState } = require("../controllers/stateController");
 const { secured, Adminauth, searchUser } = require("./auth");
 const { deleteMessage, sendMessage, editMessage } = require("./sender");
 const errorHandler = require("../middleware/errorMiddleware");
@@ -34,7 +34,7 @@ const handle_message = async (bot, msge) => {
                 if (user.admin) {
                     const options = stringify([
                         [menu(chatId)],
-                        ])
+                    ])
                         
                     await sendMessage(bot, chatId, "Admin, select option below", options);
                     
@@ -151,13 +151,13 @@ const handle_message = async (bot, msge) => {
             }
         } else if (state.isPhone) {
             if (/^0[789]\d{9}$/.test(message) && state.isAirtime) {
-                await updateUserState(chatId, { phone: message });
+                await updateUserState(chatId, { phone: message, retry: false });
                 await deleteMessage(bot, chatId, state.msgId);
                 await sendMessage(bot, chatId, `Select Airtime amount:`, AirtimeAmounts);
-                await updateUserState(chatId, { retry: false })
+                await updateUserState(chatId, { })
             } else if (/^0[789]\d{9}$/.test(message)) {
                 
-                await updateUserState(chatId, { amount: extractNairaAmount(state.textValue), phone: message, auth: true, authaction: "buydata", retry: false, isPhone: false });
+                const nstate = await updateUserState(chatId, { amount: extractNairaAmount(state.textValue), phone: message, auth: true, authaction: "buydata", retry: false, isPhone: false, retry: false });
                 const options = {
                     reply_markup: JSON.stringify({
                         inline_keyboard: [
@@ -166,11 +166,9 @@ const handle_message = async (bot, msge) => {
                         ]
                     })
                 };
-                const nstate = await getUserStateFromDB(chatId);
+                
                 await deleteMessage(bot, chatId, state.msgId);
-                await sendMessage(bot, chatId, `Confirm your request for ${extractDataAmount(nstate.textValue)} to ${nstate.phone}:\nEnter your passcode to Pay ₦${extractNairaAmount(state.textValue)}`, options).then(async()=>{
-                    await updateUserState(chatId, { retry: false })
-                });
+                await sendMessage(bot, chatId, `Confirm your request for ${extractDataAmount(nstate.textValue)} to ${nstate.phone}:\nEnter your passcode to Pay ₦${extractNairaAmount(state.textValue)}`, options);
             } else {
                 if (state.retry === true) {
                     return;
