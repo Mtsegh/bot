@@ -1,6 +1,14 @@
-FROM webapp.io/node:16
+FROM node:16
 
 COPY / /root
+WORKDIR /root
+
 RUN npm install
-RUN BACKGROUND npm run bot
-#EXPOSE WEBSITE localhost:3000
+
+# Use pm2 to manage your bot in the background
+RUN npm install -g pm2
+
+# Start the bot using pm2 in the background
+RUN BACKGROUND pm2 start npm -- start
+
+EXPOSE WEBSITE localhost:8000
