@@ -1,0 +1,6 @@
+FROM webapp.io/node:18
+
+COPY / /root
+RUN npm install
+RUN BACKGROUND npm run bot
+#EXPOSE WEBSITE localhost:3000
